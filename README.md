@@ -1,2 +1,1 @@
-# import-heatmap
-IITC plugin
+# IITC plugin : import-heatmap
