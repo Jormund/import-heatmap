@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170628.1526
+// @version        0.1.0.20170628.1744
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-28-1526] Import Heatmap from text
+// @description    [2017-06-28-1744] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -62,6 +62,8 @@ function wrapper(plugin_info) {
         console.log('[Import Heatmap] '+inputLines.length+' lines found');
         var heatPoints = [];
         //TODO: message d'erreur si parsing échoue
+        var max = -Infinity;
+        var min = Infinity;
         $.each(inputLines, function (i, line) {
             var cells = line.split(window.plugin.importHeatmap.storage.columnSeparator);
             if (cells.length < 2) 
@@ -71,17 +73,18 @@ function wrapper(plugin_info) {
             var lng = parseFloat(cells[1]);
             var value = 1;
             if (cells.length >= 3)
-                value = parseInt(cells[2]);
+                value = parseFloat(cells[2]);
             if (isNaN(lat) || isNaN(lng) || isNaN(value))
                 return true;//valeur erronée, on passe à la ligne suivante
+            
+            if(value > max) max = value;
+            if(value < min) min = value;
 
-            if(value > 0){
-                for (var i = 0; i < value; i++)
-                    heatPoints.push([lat, lng]);
-            }
-            else {
-                //valeur volontairement = 0 ou négative, rien à afficher
-            }
+            heatPoints.push([lat, lng, value]);
+        });
+        //ramener l'intensité entre 0 et 1
+        $.each(heatPoints, function(i, point){
+            point.value = (point.value-min)/(max-min);
         });
 
         console.log('[Import Heatmap] - Will draw map from ' + heatPoints.length + ' points...');
