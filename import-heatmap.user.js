@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170627.1557
+// @version        0.1.0.20170628.1501
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-27-1557] Import Heatmap from text
+// @description    [2017-06-28-1501] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -21,6 +21,31 @@ function wrapper(plugin_info) {
     if (typeof window.plugin !== 'function') window.plugin = function () { };
 
     window.plugin.importHeatmap = function () { };
+
+    window.plugin.importHeatmap.KEY_STORAGE = 'importHeatmap-storage';
+    window.plugin.importHeatmap.DEFAULT_COLUMN_SEPARATOR = ';';
+    window.plugin.importHeatmap.storage = {
+        columnSeparator: window.plugin.importHeatmap.DEFAULT_COLUMN_SEPARATOR,
+    };
+
+    // update the localStorage datas
+    window.plugin.importHeatmap.saveStorage = function () {
+        localStorage[window.plugin.importHeatmap.KEY_STORAGE] = JSON.stringify(window.plugin.importHeatmap.storage);
+    };
+
+    // load the localStorage datas
+    window.plugin.importHeatmap.loadStorage = function () {
+        if (typeof localStorage[window.plugin.importHeatmap.KEY_STORAGE] != "undefined") {
+            window.plugin.importHeatmap.storage = JSON.parse(localStorage[window.plugin.importHeatmap.KEY_STORAGE]);
+        }
+
+        //ensure default values are always set
+        if (typeof window.plugin.importHeatmap.storage.columnSeparator == "undefined") {
+            window.plugin.importHeatmap.storage.columnSeparator = window.plugin.importHeatmap.DEFAULT_COLUMN_SEPARATOR;
+        }
+
+    };
+
     window.plugin.importHeatmap.importText = function () {
         console.log('[Import Heatmap] - Parsing...');
         var inputText = $("#importHeatmap-inputText").val();
@@ -33,8 +58,9 @@ function wrapper(plugin_info) {
         var heatPoints = [];
         //TODO: message d'erreur si parsing échoue
         $.each(inputLines, function (i, line) {
-            var cells = line.split("\t");
-            if (cells.length < 2) return true;
+            var cells = line.split(window.plugin.importHeatmap.storage.columnSeparator);
+            if (cells.length < 2) 
+                return true;//syntaxe erronée, on passe à la ligne suivante
             //if (cells.length > 3) return;
             var lat = parseFloat(cells[0]);
             var lng = parseFloat(cells[1]);
@@ -42,10 +68,15 @@ function wrapper(plugin_info) {
             if (cells.length >= 3)
                 value = parseInt(cells[2]);
             if (isNaN(lat) || isNaN(lng) || isNaN(value))
-                return true;
+                return true;//valeur erronée, on passe à la ligne suivante
 
-            for (var i = 0; i < value; i++)
-                heatPoints.push([lat, lng]);
+            if(value > 0){
+                for (var i = 0; i < value; i++)
+                    heatPoints.push([lat, lng]);
+            }
+            else {
+                //valeur volontairement = 0 ou négative, rien à afficher
+            }
         });
 
         console.log('[Import Heatmap] - Will draw map from ' + heatPoints.length + ' points...');
@@ -67,7 +98,7 @@ function wrapper(plugin_info) {
     window.plugin.importHeatmap.manualOpt = function () {
 
         var html = '<div class="drawtoolsSetbox">'
-           + 'Insert data below as tabulation separated text (lat, lng, value)'
+           + 'Insert data below (lat;lng;value)'
            + '<textarea id="importHeatmap-inputText"></textarea>'
         //+ '<a onclick="window.plugin.importHeatmap.importText();return false;" tabindex="0">Import</a>'
            + '</div>';
