@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170628.1501
+// @version        0.1.0.20170628.1526
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-28-1501] Import Heatmap from text
+// @description    [2017-06-28-1526] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -53,8 +53,13 @@ function wrapper(plugin_info) {
             alert('Please paste data to import');
             return false;
         }
-        var cleanInputText = inputText.replace(/\r[^\n]/g, "\r\n").replace(/[^\r]\n/g, "\r\n");
+        console.log('[Import Heatmap] '+inputText.length+' char in input');
+        var cleanInputText = inputText.replace(/\r([^\n])/gm, "\r\n$1").replace(/([^\r])\n/gm, "$1\r\n");
+        window.plugin.importHeatmap.cleanInputText = cleanInputText;//debug
+        console.log('[Import Heatmap] '+cleanInputText.length+' char after replacing new lines');
         var inputLines = cleanInputText.split("\r\n");
+        window.plugin.importHeatmap.inputLines = inputLines;//debug
+        console.log('[Import Heatmap] '+inputLines.length+' lines found');
         var heatPoints = [];
         //TODO: message d'erreur si parsing échoue
         $.each(inputLines, function (i, line) {
@@ -155,7 +160,7 @@ function wrapper(plugin_info) {
         window.addLayerGroup('Import HeatMap', window.plugin.importHeatmap.heatLayerGroup, true);
 
         //add options menu
-        $('#toolbox').append('<a onclick="window.plugin.importHeatmap.manualOpt();return false;" title="Import Heatmap from text">Imp Heatmap</a>');
+        $('#toolbox').append('<a onclick="window.plugin.importHeatmap.manualOpt();return false;" title="Import Heatmap from text">Import Heatmap</a>');
 
         console.log('[Import Heatmap] - Loaded');
     };
