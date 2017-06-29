@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170629.1143
+// @version        0.1.0.20170629.1145
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-29-1143] Import Heatmap from text
+// @description    [2017-06-29-1145] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -62,7 +62,8 @@ function wrapper(plugin_info) {
             window.plugin.importHeatmap.inputLines = inputLines;//debug
             console.log('[Import Heatmap] '+inputLines.length+' lines found');
             var heatPoints = [];
-            //TODO: message d'erreur si parsing échoue
+            window.plugin.importHeatmap.heatPoints = heatPoints;//debug
+
             var max = -Infinity;
             var min = Infinity;
             $.each(inputLines, function (i, line) {
@@ -105,7 +106,7 @@ function wrapper(plugin_info) {
             if(!(max==1 && min==0)){
                 message += '\r\nwith intensity between '+min+' and '+max;
             }
-            alert();
+            alert(message);
             return true;
         }
         catch(err){
