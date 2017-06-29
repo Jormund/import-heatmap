@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170629.1145
+// @version        0.1.0.20170629.1346
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-29-1145] Import Heatmap from text
+// @description    [2017-06-29-1346] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -85,8 +85,8 @@ function wrapper(plugin_info) {
                 heatPoints.push([lat, lng, value]);
             });
         
-            if(min == -Infinity) min = 0;
-            if(max == Infinity) max = 1;
+            if(min == Infinity) min = 0;
+            if(max == -Infinity) max = 1;
             if(min == max) {
                 //all points have same intensity, we don't need to use it
                 max = 1;
@@ -95,7 +95,7 @@ function wrapper(plugin_info) {
             if(!(max==1 && min==0)){
                 //ramener l'intensité entre 0 et 1
                 $.each(heatPoints, function(i, point){
-                    point.value = (point.value-min)/(max-min);
+                    point[2] = (point[2]-min)/(max-min);
                 });
             }
 
@@ -118,7 +118,7 @@ function wrapper(plugin_info) {
         window.plugin.importHeatmap.heatLayerGroup.clearLayers();
 
         //gradient
-        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 10, blur: 30, maxZoom: 11, gradient: { .6: 'grey', .9: 'orange', 1: 'red'} });
+        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 10, blur: 30, maxZoom: 11, gradient: { .1:'yellow', .6: 'black', .9: 'orange', 1: 'red'} });
         window.plugin.importHeatmap.heatLayer.addTo(window.plugin.importHeatmap.heatLayerGroup);
     };
 
