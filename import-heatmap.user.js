@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170629.1346
+// @version        0.1.0.20170629.1352
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-29-1346] Import Heatmap from text
+// @description    [2017-06-29-1352] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -118,7 +118,16 @@ function wrapper(plugin_info) {
         window.plugin.importHeatmap.heatLayerGroup.clearLayers();
 
         //gradient
-        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 10, blur: 30, maxZoom: 11, gradient: { .1:'yellow', .6: 'black', .9: 'orange', 1: 'red'} });
+        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 20, blur: 30, maxZoom: 11, 
+                                                                            gradient:  { 
+                                                                                0.1: 'grey',
+                                                                                0.2: 'blue',
+                                                                                0.3: 'cyan',
+                                                                                0.4: 'lime',
+                                                                                0.5: 'yellow',
+                                                                                0.7: 'orange',
+                                                                                1.0: 'red'}
+                                                                        });
         window.plugin.importHeatmap.heatLayer.addTo(window.plugin.importHeatmap.heatLayerGroup);
     };
 
