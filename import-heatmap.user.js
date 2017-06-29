@@ -2,10 +2,10 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.0.20170628.1744
+// @version        0.1.0.20170629.1143
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2017-06-28-1744] Import Heatmap from text
+// @description    [2017-06-29-1143] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -47,50 +47,71 @@ function wrapper(plugin_info) {
     };
 
     window.plugin.importHeatmap.importText = function () {
-        console.log('[Import Heatmap] - Parsing...');
-        var inputText = $("#importHeatmap-inputText").val();
-        if (inputText.length == 0) {
-            alert('Please paste data to import');
-            return false;
-        }
-        console.log('[Import Heatmap] '+inputText.length+' char in input');
-        var cleanInputText = inputText.replace(/\r([^\n])/gm, "\r\n$1").replace(/([^\r])\n/gm, "$1\r\n");
-        window.plugin.importHeatmap.cleanInputText = cleanInputText;//debug
-        console.log('[Import Heatmap] '+cleanInputText.length+' char after replacing new lines');
-        var inputLines = cleanInputText.split("\r\n");
-        window.plugin.importHeatmap.inputLines = inputLines;//debug
-        console.log('[Import Heatmap] '+inputLines.length+' lines found');
-        var heatPoints = [];
-        //TODO: message d'erreur si parsing échoue
-        var max = -Infinity;
-        var min = Infinity;
-        $.each(inputLines, function (i, line) {
-            var cells = line.split(window.plugin.importHeatmap.storage.columnSeparator);
-            if (cells.length < 2) 
-                return true;//syntaxe erronée, on passe à la ligne suivante
-            //if (cells.length > 3) return;
-            var lat = parseFloat(cells[0]);
-            var lng = parseFloat(cells[1]);
-            var value = 1;
-            if (cells.length >= 3)
-                value = parseFloat(cells[2]);
-            if (isNaN(lat) || isNaN(lng) || isNaN(value))
-                return true;//valeur erronée, on passe à la ligne suivante
+        try{
+            console.log('[Import Heatmap] - Parsing...');
+            var inputText = $("#importHeatmap-inputText").val();
+            if (inputText.length == 0) {
+                alert('Please paste data to import');
+                return false;
+            }
+            //console.log('[Import Heatmap] '+inputText.length+' char in input');
+            var cleanInputText = inputText.replace(/\r([^\n])/gm, "\r\n$1").replace(/([^\r])\n/gm, "$1\r\n");
+            window.plugin.importHeatmap.cleanInputText = cleanInputText;//debug
+            //console.log('[Import Heatmap] '+cleanInputText.length+' char after replacing new lines');
+            var inputLines = cleanInputText.split("\r\n");
+            window.plugin.importHeatmap.inputLines = inputLines;//debug
+            console.log('[Import Heatmap] '+inputLines.length+' lines found');
+            var heatPoints = [];
+            //TODO: message d'erreur si parsing échoue
+            var max = -Infinity;
+            var min = Infinity;
+            $.each(inputLines, function (i, line) {
+                var cells = line.split(window.plugin.importHeatmap.storage.columnSeparator);
+                if (cells.length < 2) 
+                    return true;//syntaxe erronée, on passe à la ligne suivante
+                //if (cells.length > 3) return;
+                var lat = parseFloat(cells[0]);
+                var lng = parseFloat(cells[1]);
+                var value = 1;
+                if (cells.length >= 3)
+                    value = parseFloat(cells[2]);
+                if (isNaN(lat) || isNaN(lng) || isNaN(value))
+                    return true;//valeur erronée, on passe à la ligne suivante
             
-            if(value > max) max = value;
-            if(value < min) min = value;
+                if(value > max) max = value;
+                if(value < min) min = value;
 
-            heatPoints.push([lat, lng, value]);
-        });
-        //ramener l'intensité entre 0 et 1
-        $.each(heatPoints, function(i, point){
-            point.value = (point.value-min)/(max-min);
-        });
+                heatPoints.push([lat, lng, value]);
+            });
+        
+            if(min == -Infinity) min = 0;
+            if(max == Infinity) max = 1;
+            if(min == max) {
+                //all points have same intensity, we don't need to use it
+                max = 1;
+                min = 0;
+            }
+            if(!(max==1 && min==0)){
+                //ramener l'intensité entre 0 et 1
+                $.each(heatPoints, function(i, point){
+                    point.value = (point.value-min)/(max-min);
+                });
+            }
 
-        console.log('[Import Heatmap] - Will draw map from ' + heatPoints.length + ' points...');
-        window.plugin.importHeatmap.heatmapFromArray(heatPoints);
-
-        return true;
+            console.log('[Import Heatmap] - Will draw map from ' + heatPoints.length + ' points...');
+            window.plugin.importHeatmap.heatmapFromArray(heatPoints);
+            var message = '[Import Heatmap] - Done';
+            message += '\r\n'+heatPoints.length+' points';
+            if(!(max==1 && min==0)){
+                message += '\r\nwith intensity between '+min+' and '+max;
+            }
+            alert();
+            return true;
+        }
+        catch(err){
+            alert(err.Message);
+            throw err;
+        }
     }
     window.plugin.importHeatmap.heatmapFromArray = function (heatPoints) {
         window.plugin.importHeatmap.heatLayerGroup.clearLayers();
@@ -98,9 +119,6 @@ function wrapper(plugin_info) {
         //gradient
         window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 10, blur: 30, maxZoom: 11, gradient: { .6: 'grey', .9: 'orange', 1: 'red'} });
         window.plugin.importHeatmap.heatLayer.addTo(window.plugin.importHeatmap.heatLayerGroup);
-
-        //console.log('[Import Heatmap] - Done');
-        alert('[Import Heatmap] - Done');
     };
 
     window.plugin.importHeatmap.manualOpt = function () {
