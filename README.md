@@ -11,4 +11,4 @@ Sample CSV:
 Location: https://intel.ingress.com/?pll=48.944497,2.324291
 
 Result: 
-![Sample result](https://raw.githubusercontent.com/Jormund/import-heatmap/master/img/sample.png)
+![Sample result](https://raw.githubusercontent.com/Jormund/import-heatmap/master/sample.png)
