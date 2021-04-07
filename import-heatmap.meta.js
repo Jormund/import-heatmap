@@ -2,11 +2,11 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.1.20181031.1930
+// @version        1.0.0.20210407.2122
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.meta.js
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2018-10-31-1930] Import Heatmap from text
+// @description    [2021-04-07-2122] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
