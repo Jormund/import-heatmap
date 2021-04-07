@@ -2,11 +2,11 @@
 // @id             iitc-plugin-import-heatmap@Jormund
 // @name           IITC plugin : Import Heatmap
 // @category       Layer
-// @version        0.1.1.20181031.1930
+// @version        1.0.0.20210407.2122
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.meta.js
 // @downloadURL    https://raw.githubusercontent.com/Jormund/import-heatmap/master/import-heatmap.user.js
-// @description    [2018-10-31-1930] Import Heatmap from text
+// @description    [2021-04-07-2122] Import Heatmap from text
 // @include        https://ingress.com/intel*
 // @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
@@ -18,6 +18,7 @@
 // @grant          none
 // ==/UserScript==
 //Changelog
+//1.0.0 Fix for leaflet 1.6 used by IITC CE 0.31.1
 //0.1.1 Activate on intel.ingress.com
 //0.1.0 Initial release
 
@@ -54,7 +55,7 @@ function wrapper(plugin_info) {
     };
 
     window.plugin.importHeatmap.importText = function () {
-        try{
+        try {
             console.log('[Import Heatmap] - Parsing...');
             var inputText = $("#importHeatmap-inputText").val();
             if (inputText.length == 0) {
@@ -67,7 +68,7 @@ function wrapper(plugin_info) {
             //console.log('[Import Heatmap] '+cleanInputText.length+' char after replacing new lines');
             var inputLines = cleanInputText.split("\r\n");
             window.plugin.importHeatmap.inputLines = inputLines;//debug
-            console.log('[Import Heatmap] '+inputLines.length+' lines found');
+            console.log('[Import Heatmap] ' + inputLines.length + ' lines found');
             var heatPoints = [];
             window.plugin.importHeatmap.heatPoints = heatPoints;//debug
 
@@ -75,7 +76,7 @@ function wrapper(plugin_info) {
             var min = Infinity;
             $.each(inputLines, function (i, line) {
                 var cells = line.split(window.plugin.importHeatmap.storage.columnSeparator);
-                if (cells.length < 2) 
+                if (cells.length < 2)
                     return true;//syntaxe erronée, on passe à la ligne suivante
                 //if (cells.length > 3) return;
                 var lat = parseFloat(cells[0]);
@@ -85,38 +86,38 @@ function wrapper(plugin_info) {
                     value = parseFloat(cells[2]);
                 if (isNaN(lat) || isNaN(lng) || isNaN(value))
                     return true;//valeur erronée, on passe à la ligne suivante
-            
-                if(value > max) max = value;
-                if(value < min) min = value;
+
+                if (value > max) max = value;
+                if (value < min) min = value;
 
                 heatPoints.push([lat, lng, value]);
             });
-        
-            if(min == Infinity) min = 0;
-            if(max == -Infinity) max = 1;
-            if(min == max) {
+
+            if (min == Infinity) min = 0;
+            if (max == -Infinity) max = 1;
+            if (min == max) {
                 //all points have same intensity, we don't need to use it
                 max = 1;
                 min = 0;
             }
-            if(!(max==1 && min==0)){
+            if (!(max == 1 && min == 0)) {
                 //ramener l'intensité entre 0 et 1
-                $.each(heatPoints, function(i, point){
-                    point[2] = (point[2]-min)/(max-min);
+                $.each(heatPoints, function (i, point) {
+                    point[2] = (point[2] - min) / (max - min);
                 });
             }
 
             console.log('[Import Heatmap] - Will draw map from ' + heatPoints.length + ' points...');
             window.plugin.importHeatmap.heatmapFromArray(heatPoints);
             var message = '[Import Heatmap] - Done';
-            message += '\r\n'+heatPoints.length+' points';
-            if(!(max==1 && min==0)){
-                message += '\r\nwith intensity between '+min+' and '+max;
+            message += '\r\n' + heatPoints.length + ' points';
+            if (!(max == 1 && min == 0)) {
+                message += '\r\nwith intensity between ' + min + ' and ' + max;
             }
             alert(message);
             return true;
         }
-        catch(err){
+        catch (err) {
             alert(err.Message);
             throw err;
         }
@@ -125,26 +126,28 @@ function wrapper(plugin_info) {
         window.plugin.importHeatmap.heatLayerGroup.clearLayers();
 
         //gradient
-        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, { radius: 20, blur: 30, maxZoom: 11, 
-                                                                            gradient:  { 
-                                                                                0.1: 'grey',
-                                                                                0.2: 'blue',
-                                                                                0.3: 'cyan',
-                                                                                0.4: 'lime',
-                                                                                0.5: 'yellow',
-                                                                                0.7: 'orange',
-                                                                                1.0: 'red'}
-                                                                        });
+        window.plugin.importHeatmap.heatLayer = L.heatLayer(heatPoints, {
+            radius: 20, blur: 30, maxZoom: 11,
+            gradient: {
+                0.1: 'grey',
+                0.2: 'blue',
+                0.3: 'cyan',
+                0.4: 'lime',
+                0.5: 'yellow',
+                0.7: 'orange',
+                1.0: 'red'
+            }
+        });
         window.plugin.importHeatmap.heatLayer.addTo(window.plugin.importHeatmap.heatLayerGroup);
     };
 
     window.plugin.importHeatmap.manualOpt = function () {
 
         var html = '<div class="drawtoolsSetbox">'
-           + 'Insert data below (lat;lng;value)'
-           + '<textarea id="importHeatmap-inputText"></textarea>'
-        //+ '<a onclick="window.plugin.importHeatmap.importText();return false;" tabindex="0">Import</a>'
-           + '</div>';
+            + 'Insert data below (lat;lng;value)'
+            + '<textarea id="importHeatmap-inputText"></textarea>'
+            //+ '<a onclick="window.plugin.importHeatmap.importText();return false;" tabindex="0">Import</a>'
+            + '</div>';
 
         dialog({
             html: html,
@@ -165,33 +168,363 @@ function wrapper(plugin_info) {
         (c) 2014, Vladimir Agafonkin
         simpleheat, a tiny JavaScript library for drawing heatmaps with Canvas
         https://github.com/mourner/simpleheat
+        commit c1998c36fa2f9a31350371fd42ee30eafcc78f9c
         */
-        !function () { "use strict"; function t(i) { return this instanceof t ? (this._canvas = i = "string" == typeof i ? document.getElementById(i) : i, this._ctx = i.getContext("2d"), this._width = i.width, this._height = i.height, this._max = 1, void this.clear()) : new t(i) } t.prototype = { defaultRadius: 25, defaultGradient: { .4: "blue", .6: "cyan", .7: "lime", .8: "yellow", 1: "red" }, data: function (t) { return this._data = t, this }, max: function (t) { return this._max = t, this }, add: function (t) { return this._data.push(t), this }, clear: function () { return this._data = [], this }, radius: function (t, i) { i = i || 15; var a = this._circle = document.createElement("canvas"), e = a.getContext("2d"), s = this._r = t + i; return a.width = a.height = 2 * s, e.shadowOffsetX = e.shadowOffsetY = 200, e.shadowBlur = i, e.shadowColor = "black", e.beginPath(), e.arc(s - 200, s - 200, t, 0, 2 * Math.PI, !0), e.closePath(), e.fill(), this }, gradient: function (t) { var i = document.createElement("canvas"), a = i.getContext("2d"), e = a.createLinearGradient(0, 0, 0, 256); i.width = 1, i.height = 256; for (var s in t) e.addColorStop(s, t[s]); return a.fillStyle = e, a.fillRect(0, 0, 1, 256), this._grad = a.getImageData(0, 0, 1, 256).data, this }, draw: function (t) { this._circle || this.radius(this.defaultRadius), this._grad || this.gradient(this.defaultGradient); var i = this._ctx; i.clearRect(0, 0, this._width, this._height); for (var a, e = 0, s = this._data.length; s > e; e++) a = this._data[e], i.globalAlpha = Math.max(a[2] / this._max, t || .05), i.drawImage(this._circle, a[0] - this._r, a[1] - this._r); var n = i.getImageData(0, 0, this._width, this._height); return this._colorize(n.data, this._grad), i.putImageData(n, 0, 0), this }, _colorize: function (t, i) { for (var a, e = 3, s = t.length; s > e; e += 4) a = 4 * t[e], a && (t[e - 3] = i[a], t[e - 2] = i[a + 1], t[e - 1] = i[a + 2]) } }, window.simpleheat = t } (),
-        /*
-        (c) 2014, Vladimir Agafonkin
-        Leaflet.heat, a tiny and fast heatmap plugin for Leaflet.
-        https://github.com/Leaflet/Leaflet.heat
-        */
-    L.HeatLayer = L.Class.extend({ initialize: function (t, i) { this._latlngs = t, L.setOptions(this, i) }, setLatLngs: function (t) { return this._latlngs = t, this.redraw() }, addLatLng: function (t) { return this._latlngs.push(t), this.redraw() }, setOptions: function (t) { return L.setOptions(this, t), this._heat && this._updateOptions(), this.redraw() }, redraw: function () { return !this._heat || this._frame || this._map._animating || (this._frame = L.Util.requestAnimFrame(this._redraw, this)), this }, onAdd: function (t) { this._map = t, this._canvas || this._initCanvas(), t._panes.overlayPane.insertBefore(this._canvas, t._panes.overlayPane.childNodes[0]), t.on("moveend", this._reset, this), t.options.zoomAnimation && L.Browser.any3d && t.on("zoomanim", this._animateZoom, this), this._reset() }, onRemove: function (t) { t.getPanes().overlayPane.removeChild(this._canvas), t.off("moveend", this._reset, this), t.options.zoomAnimation && t.off("zoomanim", this._animateZoom, this) }, addTo: function (t) { return t.addLayer(this), this }, _initCanvas: function () { var t = this._canvas = L.DomUtil.create("canvas", "leaflet-heatmap-layer leaflet-layer"), i = this._map.getSize(); t.width = i.x, t.height = i.y; var a = this._map.options.zoomAnimation && L.Browser.any3d; L.DomUtil.addClass(t, "leaflet-zoom-" + (a ? "animated" : "hide")), this._heat = simpleheat(t), this._updateOptions() }, _updateOptions: function () { this._heat.radius(this.options.radius || this._heat.defaultRadius, this.options.blur), this.options.gradient && this._heat.gradient(this.options.gradient), this.options.max && this._heat.max(this.options.max) }, _reset: function () { var t = this._map.containerPointToLayerPoint([0, 0]); L.DomUtil.setPosition(this._canvas, t); var i = this._map.getSize(); this._heat._width !== i.x && (this._canvas.width = this._heat._width = i.x), this._heat._height !== i.y && (this._canvas.height = this._heat._height = i.y), this._redraw() }, _redraw: function () { var t, i, a, e, s, n, h, o, r, _ = [], d = 1, l = this._map.getSize(), m = new L.LatLngBounds(this._map.containerPointToLatLng(L.point([-d, -d])), this._map.containerPointToLatLng(l.add([d, d]))), c = void 0 === this.options.maxZoom ? this._map.getMaxZoom() : this.options.maxZoom, u = 1 / Math.pow(2, Math.max(0, Math.min(c - this._map.getZoom(), 12))), g = d / 2, f = [], p = this._map._getMapPanePos(), v = p.x % g, w = p.y % g; for (t = 0, i = this._latlngs.length; i > t; t++) m.contains(this._latlngs[t]) && (a = this._map.latLngToContainerPoint(this._latlngs[t]), s = Math.floor((a.x - v) / g) + 2, n = Math.floor((a.y - w) / g) + 2, r = (this._latlngs[t].alt || 1) * u, f[n] = f[n] || [], e = f[n][s], e ? (e[0] = (e[0] * e[2] + a.x * r) / (e[2] + r), e[1] = (e[1] * e[2] + a.y * r) / (e[2] + r), e[2] += r) : f[n][s] = [a.x, a.y, r]); for (t = 0, i = f.length; i > t; t++) if (f[t]) for (h = 0, o = f[t].length; o > h; h++) e = f[t][h], e && _.push([Math.round(e[0]), Math.round(e[1]), Math.min(e[2], 1)]); this._heat.data(_).draw(), this._frame = null }, _animateZoom: function (t) { var i = this._map.getZoomScale(t.zoom), a = this._map._getCenterOffset(t.center)._multiplyBy(-i).subtract(this._map._getMapPanePos()); this._canvas.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(a) + " scale(" + i + ")" } }), L.heatLayer = function (t, i) { return new L.HeatLayer(t, i) };
+        function simpleheat(canvas) {
+            if (!(this instanceof simpleheat)) return new simpleheat(canvas);
 
-        /* Manual rendering
-        $('#toolbox').append('<a id="farmHeat" title="Display a heatmap of P8s">Farm Heat</a>');
-        $('#farmHeat').click(window.plugin.importHeatmap.heat);
-        //*/
+            this._canvas = canvas = typeof canvas === 'string' ? document.getElementById(canvas) : canvas;
 
-        //* Automatic rendering
-//        window.addHook('mapDataRefreshEnd', function (e) {
-//            window.plugin.importHeatmap.heat();
-//        });
-        //window.addHook('portalAdded', function(e) { 
-        //    window.plugin.importHeatmap.renderPortal(e.portal);
-        //});
-//        window.map.on('layeradd', function (e) {
-//            if (e.layer === window.plugin.importHeatmap.heatLayerGroup) {
-//                window.plugin.importHeatmap.heat();
-//            }
-//        });
-        //*/
+            this._ctx = canvas.getContext('2d');
+            this._width = canvas.width;
+            this._height = canvas.height;
+
+            this._max = 1;
+            this._data = [];
+        }
+
+        simpleheat.prototype = {
+
+            defaultRadius: 25,
+
+            defaultGradient: {
+                0.4: 'blue',
+                0.6: 'cyan',
+                0.7: 'lime',
+                0.8: 'yellow',
+                1.0: 'red'
+            },
+
+            data: function (data) {
+                this._data = data;
+                return this;
+            },
+
+            max: function (max) {
+                this._max = max;
+                return this;
+            },
+
+            add: function (point) {
+                this._data.push(point);
+                return this;
+            },
+
+            clear: function () {
+                this._data = [];
+                return this;
+            },
+
+            radius: function (r, blur) {
+                blur = blur === undefined ? 15 : blur;
+
+                // create a grayscale blurred circle image that we'll use for drawing points
+                var circle = this._circle = this._createCanvas(),
+                    ctx = circle.getContext('2d'),
+                    r2 = this._r = r + blur;
+
+                circle.width = circle.height = r2 * 2;
+
+                ctx.shadowOffsetX = ctx.shadowOffsetY = r2 * 2;
+                ctx.shadowBlur = blur;
+                ctx.shadowColor = 'black';
+
+                ctx.beginPath();
+                ctx.arc(-r2, -r2, r, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.fill();
+
+                return this;
+            },
+
+            resize: function () {
+                this._width = this._canvas.width;
+                this._height = this._canvas.height;
+            },
+
+            gradient: function (grad) {
+                // create a 256x1 gradient that we'll use to turn a grayscale heatmap into a colored one
+                var canvas = this._createCanvas(),
+                    ctx = canvas.getContext('2d'),
+                    gradient = ctx.createLinearGradient(0, 0, 0, 256);
+
+                canvas.width = 1;
+                canvas.height = 256;
+
+                for (var i in grad) {
+                    gradient.addColorStop(+i, grad[i]);
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 1, 256);
+
+                this._grad = ctx.getImageData(0, 0, 1, 256).data;
+
+                return this;
+            },
+
+            draw: function (minOpacity) {
+                if (!this._circle) this.radius(this.defaultRadius);
+                if (!this._grad) this.gradient(this.defaultGradient);
+
+                var ctx = this._ctx;
+
+                ctx.clearRect(0, 0, this._width, this._height);
+
+                // draw a grayscale heatmap by putting a blurred circle at each data point
+                for (var i = 0, len = this._data.length, p; i < len; i++) {
+                    p = this._data[i];
+                    ctx.globalAlpha = Math.min(Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity), 1);
+                    ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
+                }
+
+                // colorize the heatmap, using opacity value of each pixel to get the right color from our gradient
+                var colored = ctx.getImageData(0, 0, this._width, this._height);
+                this._colorize(colored.data, this._grad);
+                ctx.putImageData(colored, 0, 0);
+
+                return this;
+            },
+
+            _colorize: function (pixels, gradient) {
+                for (var i = 0, len = pixels.length, j; i < len; i += 4) {
+                    j = pixels[i + 3] * 4; // get gradient color from opacity value
+
+                    if (j) {
+                        pixels[i] = gradient[j];
+                        pixels[i + 1] = gradient[j + 1];
+                        pixels[i + 2] = gradient[j + 2];
+                    }
+                }
+            },
+
+            _createCanvas: function () {
+                if (typeof document !== 'undefined') {
+                    return document.createElement('canvas');
+                } else {
+                    // create a new canvas instance in node.js
+                    // the canvas class needs to have a default constructor without any parameter
+                    return new this._canvas.constructor();
+                }
+            }
+        };
+
+            /*
+            (c) 2014, Vladimir Agafonkin
+            Leaflet.heat, a tiny and fast heatmap plugin for Leaflet.
+            https://github.com/Leaflet/Leaflet.heat
+            commit d2871b3
+            */
+            L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
+
+                // options: {
+                //     minOpacity: 0.05,
+                //     maxZoom: 18,
+                //     radius: 25,
+                //     blur: 15,
+                //     max: 1.0
+                // },
+
+                initialize: function (latlngs, options) {
+                    this._latlngs = latlngs;
+                    L.setOptions(this, options);
+                },
+
+                setLatLngs: function (latlngs) {
+                    this._latlngs = latlngs;
+                    return this.redraw();
+                },
+
+                addLatLng: function (latlng) {
+                    this._latlngs.push(latlng);
+                    return this.redraw();
+                },
+
+                setOptions: function (options) {
+                    L.setOptions(this, options);
+                    if (this._heat) {
+                        this._updateOptions();
+                    }
+                    return this.redraw();
+                },
+
+                redraw: function () {
+                    if (this._heat && !this._frame && this._map && !this._map._animating) {
+                        this._frame = L.Util.requestAnimFrame(this._redraw, this);
+                    }
+                    return this;
+                },
+
+                onAdd: function (map) {
+                    this._map = map;
+
+                    if (!this._canvas) {
+                        this._initCanvas();
+                    }
+
+                    if (this.options.pane) {
+                        this.getPane().appendChild(this._canvas);
+                    } else {
+                        map._panes.overlayPane.appendChild(this._canvas);
+                    }
+
+                    map.on('moveend', this._reset, this);
+
+                    if (map.options.zoomAnimation && L.Browser.any3d) {
+                        map.on('zoomanim', this._animateZoom, this);
+                    }
+
+                    this._reset();
+                },
+
+                onRemove: function (map) {
+                    if (this.options.pane) {
+                        this.getPane().removeChild(this._canvas);
+                    } else {
+                        map.getPanes().overlayPane.removeChild(this._canvas);
+                    }
+
+                    map.off('moveend', this._reset, this);
+
+                    if (map.options.zoomAnimation) {
+                        map.off('zoomanim', this._animateZoom, this);
+                    }
+                },
+
+                addTo: function (map) {
+                    map.addLayer(this);
+                    return this;
+                },
+
+                _initCanvas: function () {
+                    var canvas = this._canvas = L.DomUtil.create('canvas', 'leaflet-heatmap-layer leaflet-layer');
+
+                    var originProp = L.DomUtil.testProp(['transformOrigin', 'WebkitTransformOrigin', 'msTransformOrigin']);
+                    canvas.style[originProp] = '50% 50%';
+
+                    var size = this._map.getSize();
+                    canvas.width = size.x;
+                    canvas.height = size.y;
+
+                    var animated = this._map.options.zoomAnimation && L.Browser.any3d;
+                    L.DomUtil.addClass(canvas, 'leaflet-zoom-' + (animated ? 'animated' : 'hide'));
+
+                    this._heat = simpleheat(canvas);
+                    this._updateOptions();
+                },
+
+                _updateOptions: function () {
+                    this._heat.radius(this.options.radius || this._heat.defaultRadius, this.options.blur);
+
+                    if (this.options.gradient) {
+                        this._heat.gradient(this.options.gradient);
+                    }
+                    if (this.options.max) {
+                        this._heat.max(this.options.max);
+                    }
+                },
+
+                _reset: function () {
+                    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+                    L.DomUtil.setPosition(this._canvas, topLeft);
+
+                    var size = this._map.getSize();
+
+                    if (this._heat._width !== size.x) {
+                        this._canvas.width = this._heat._width = size.x;
+                    }
+                    if (this._heat._height !== size.y) {
+                        this._canvas.height = this._heat._height = size.y;
+                    }
+
+                    this._redraw();
+                },
+
+                _redraw: function () {
+                    if (!this._map) {
+                        return;
+                    }
+                    var data = [],
+                        r = this._heat._r,
+                        size = this._map.getSize(),
+                        bounds = new L.Bounds(
+                            L.point([-r, -r]),
+                            size.add([r, r])),
+
+                        max = this.options.max === undefined ? 1 : this.options.max,
+                        maxZoom = this.options.maxZoom === undefined ? this._map.getMaxZoom() : this.options.maxZoom,
+                        v = 1 / Math.pow(2, Math.max(0, Math.min(maxZoom - this._map.getZoom(), 12))),
+                        cellSize = r / 2,
+                        grid = [],
+                        panePos = this._map._getMapPanePos(),
+                        offsetX = panePos.x % cellSize,
+                        offsetY = panePos.y % cellSize,
+                        i, len, p, cell, x, y, j, len2, k;
+
+                    // console.time('process');
+                    for (i = 0, len = this._latlngs.length; i < len; i++) {
+                        p = this._map.latLngToContainerPoint(this._latlngs[i]);
+                        if (bounds.contains(p)) {
+                            x = Math.floor((p.x - offsetX) / cellSize) + 2;
+                            y = Math.floor((p.y - offsetY) / cellSize) + 2;
+
+                            var alt =
+                                this._latlngs[i].alt !== undefined ? this._latlngs[i].alt :
+                                    this._latlngs[i][2] !== undefined ? +this._latlngs[i][2] : 1;
+                            k = alt * v;
+
+                            grid[y] = grid[y] || [];
+                            cell = grid[y][x];
+
+                            if (!cell) {
+                                grid[y][x] = [p.x, p.y, k];
+
+                            } else {
+                                cell[0] = (cell[0] * cell[2] + p.x * k) / (cell[2] + k); // x
+                                cell[1] = (cell[1] * cell[2] + p.y * k) / (cell[2] + k); // y
+                                cell[2] += k; // cumulated intensity value
+                            }
+                        }
+                    }
+
+                    for (i = 0, len = grid.length; i < len; i++) {
+                        if (grid[i]) {
+                            for (j = 0, len2 = grid[i].length; j < len2; j++) {
+                                cell = grid[i][j];
+                                if (cell) {
+                                    data.push([
+                                        Math.round(cell[0]),
+                                        Math.round(cell[1]),
+                                        Math.min(cell[2], max)
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    // console.timeEnd('process');
+
+                    // console.time('draw ' + data.length);
+                    this._heat.data(data).draw(this.options.minOpacity);
+                    // console.timeEnd('draw ' + data.length);
+
+                    this._frame = null;
+                },
+
+                _animateZoom: function (e) {
+                    var scale = this._map.getZoomScale(e.zoom),
+                        offset = this._map._getCenterOffset(e.center)._multiplyBy(-scale).subtract(this._map._getMapPanePos());
+
+                    if (L.DomUtil.setTransform) {
+                        L.DomUtil.setTransform(this._canvas, offset, scale);
+
+                    } else {
+                        this._canvas.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(offset) + ' scale(' + scale + ')';
+                    }
+                }
+            });
+        L.heatLayer = function (latlngs, options) {
+            return new L.HeatLayer(latlngs, options);
+        };
 
         window.plugin.importHeatmap.heatLayerGroup = new L.LayerGroup();
         window.plugin.importHeatmap.heatLayer = null;
